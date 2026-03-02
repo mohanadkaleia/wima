@@ -84,8 +84,8 @@ resolve() {
 # ---------------------------------------------------------------------------
 # Generate IDs
 # ---------------------------------------------------------------------------
-AGENT_ID="agent-$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 12)"
-TRACE_ID="trace-$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 12)"
+AGENT_ID="agent-$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom 2>/dev/null | head -c 12 || true)"
+TRACE_ID="trace-$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom 2>/dev/null | head -c 12 || true)"
 AGENT_NAME="claude-worker-$$"
 WORKTREE_PATH="${WORKTREE_BASE}/${TASK_SLUG}"
 
@@ -154,7 +154,7 @@ if [[ "$CHANNEL_EXISTS" == "True" || "$CHANNEL_EXISTS" == "true" ]] && [[ -n "$E
   CHANNEL_ID="$EXISTING_CHANNEL_ID"
   echo "  Channel exists: ${CHANNEL_ID}"
 else
-  CHANNEL_ID="chan-$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | head -c 12)"
+  CHANNEL_ID="chan-$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom 2>/dev/null | head -c 12 || true)"
   ingest "{\"events\":[{\"type\":\"channel.created\",\"timestamp\":$(date +%s)000,\"payload\":{\"resourceType\":\"channel\",\"resourceId\":\"${CHANNEL_ID}\",\"channelId\":\"${CHANNEL_ID}\",\"name\":\"#task-${TASK_SLUG}\",\"taskId\":\"${TASK_ID}\",\"channelType\":\"task\"}}]}" > /dev/null
   # Resolve the newly created channel
   sleep 1
