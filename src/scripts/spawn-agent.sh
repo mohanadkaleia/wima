@@ -24,6 +24,8 @@ BRANCH=""
 WORKTREE_BASE="${HOME}/openclaw-worktrees"
 SWARMOPS_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 CLI_PATH="${SWARMOPS_DIR}/src/scripts/cli.ts"
+HOOK_SCRIPT="${SWARMOPS_DIR}/src/scripts/swarmops-hook.sh"
+PARSE_SESSION="${SWARMOPS_DIR}/src/scripts/parse-session.ts"
 TEMPLATE_PATH="${SWARMOPS_DIR}/src/templates/CLAUDE.md"
 START_TIME=$(date +%s)
 
@@ -101,7 +103,7 @@ echo ""
 # ---------------------------------------------------------------------------
 # 1. Create/find the task in SwarmOps
 # ---------------------------------------------------------------------------
-echo "[1/9] Creating/finding task..."
+echo "[1/10] Creating/finding task..."
 RESOLVE_RESULT=$(resolve "type=task&slug=${TASK_SLUG}")
 TASK_EXISTS=$(echo "$RESOLVE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('exists', False))" 2>/dev/null || echo "False")
 TASK_ID=$(echo "$RESOLVE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('id', ''))" 2>/dev/null || echo "")
@@ -126,25 +128,25 @@ fi
 # ---------------------------------------------------------------------------
 # 2. Register the agent
 # ---------------------------------------------------------------------------
-echo "[2/9] Registering agent..."
+echo "[2/10] Registering agent..."
 ingest "{\"events\":[{\"type\":\"agent.registered\",\"timestamp\":$(date +%s)000,\"agentId\":\"${AGENT_ID}\",\"payload\":{\"resourceType\":\"agent\",\"resourceId\":\"${AGENT_ID}\",\"agentId\":\"${AGENT_ID}\",\"name\":\"${AGENT_NAME}\",\"agentType\":\"claude-code\",\"model\":\"claude-sonnet-4-6\"}}]}" > /dev/null
 
 # ---------------------------------------------------------------------------
 # 3. Start the agent
 # ---------------------------------------------------------------------------
-echo "[3/9] Starting agent..."
+echo "[3/10] Starting agent..."
 ingest "{\"events\":[{\"type\":\"agent.started\",\"timestamp\":$(date +%s)000,\"agentId\":\"${AGENT_ID}\",\"payload\":{\"resourceType\":\"agent\",\"resourceId\":\"${AGENT_ID}\",\"taskId\":\"${TASK_ID}\"}}]}" > /dev/null
 
 # ---------------------------------------------------------------------------
 # 4. Create a trace
 # ---------------------------------------------------------------------------
-echo "[4/9] Creating trace..."
+echo "[4/10] Creating trace..."
 ingest "{\"events\":[{\"type\":\"trace.started\",\"timestamp\":$(date +%s)000,\"agentId\":\"${AGENT_ID}\",\"payload\":{\"resourceType\":\"trace\",\"resourceId\":\"${TRACE_ID}\",\"traceId\":\"${TRACE_ID}\",\"taskId\":\"${TASK_ID}\",\"agentId\":\"${AGENT_ID}\",\"name\":\"${TASK_SLUG}\",\"input\":\"${TASK_DESCRIPTION}\",\"model\":\"claude-sonnet-4-6\"}}]}" > /dev/null
 
 # ---------------------------------------------------------------------------
 # 5. Create a channel for the task
 # ---------------------------------------------------------------------------
-echo "[5/9] Creating channel..."
+echo "[5/10] Creating channel..."
 CHANNEL_ID=""
 RESOLVE_RESULT=$(resolve "type=channel&taskId=${TASK_ID}")
 CHANNEL_EXISTS=$(echo "$RESOLVE_RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('exists', False))" 2>/dev/null || echo "False")
@@ -169,7 +171,7 @@ fi
 # ---------------------------------------------------------------------------
 # 6. Create git worktree
 # ---------------------------------------------------------------------------
-echo "[6/9] Creating worktree..."
+echo "[6/10] Creating worktree..."
 mkdir -p "$WORKTREE_BASE"
 if [[ -d "$WORKTREE_PATH" ]]; then
   echo "  Worktree already exists at ${WORKTREE_PATH}, reusing..."
@@ -182,7 +184,7 @@ fi
 # ---------------------------------------------------------------------------
 # 7. Inject CLAUDE.md into the worktree
 # ---------------------------------------------------------------------------
-echo "[7/9] Injecting CLAUDE.md..."
+echo "[7/10] Injecting CLAUDE.md..."
 if [[ -f "$TEMPLATE_PATH" ]]; then
   sed \
     -e "s|{{TASK_IDENTIFIER}}|${TASK_SLUG}|g" \
@@ -195,9 +197,45 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# 7b. Inject hooks config into worktree for automatic activity capture
+# ---------------------------------------------------------------------------
+echo "[7b/10] Injecting hooks config..."
+HOOKS_DIR="${WORKTREE_PATH}/.claude"
+mkdir -p "$HOOKS_DIR"
+cat > "${HOOKS_DIR}/settings.json" <<HOOKEOF
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${HOOK_SCRIPT}",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${HOOK_SCRIPT}",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
+HOOKEOF
+echo "  Hooks config written to ${HOOKS_DIR}/settings.json"
+
+# ---------------------------------------------------------------------------
 # 8. Ensure CLI is accessible
 # ---------------------------------------------------------------------------
-echo "[8/9] Verifying CLI path..."
+echo "[8/10] Verifying CLI path..."
 if [[ -f "$CLI_PATH" ]]; then
   echo "  CLI available at: ${CLI_PATH}"
 else
@@ -207,17 +245,19 @@ fi
 # ---------------------------------------------------------------------------
 # 9. Start Claude Code agent
 # ---------------------------------------------------------------------------
-echo "[9/9] Spawning Claude Code agent..."
+echo "[9/10] Spawning Claude Code agent..."
 echo ""
 
 CLAUDE_PROMPT="${TASK_DESCRIPTION}.
 
-IMPORTANT: You have SwarmOps integration. Use the swarmops CLI to report progress:
+Your activity is automatically tracked by SwarmOps (tool calls, token usage, cost).
+Optionally use the CLI for explicit status messages or decisions:
 - Run: npx tsx ${CLI_PATH} msg \"your message\" to post updates
 - Run: npx tsx ${CLI_PATH} decision --title \"...\" --context \"...\" --decision \"...\" to log decisions
-- Run: npx tsx ${CLI_PATH} done \"summary\" when finished
 
 When completely finished, run: openclaw system event --text \"Done: ${TASK_SLUG}\" --mode now"
+
+cd "$WORKTREE_PATH"
 
 SWARMOPS_URL="$SWARMOPS_URL" \
 SWARMOPS_TOKEN="$SWARMOPS_TOKEN" \
@@ -225,6 +265,7 @@ SWARMOPS_TASK_ID="$TASK_ID" \
 SWARMOPS_AGENT_ID="$AGENT_ID" \
 SWARMOPS_TRACE_ID="$TRACE_ID" \
 SWARMOPS_CHANNEL_ID="$CHANNEL_ID" \
+SWARMOPS_WORKTREE_PATH="$WORKTREE_PATH" \
   claude --dangerously-skip-permissions "$CLAUDE_PROMPT"
 
 CLAUDE_EXIT_CODE=$?
@@ -238,8 +279,32 @@ DURATION_MS=$(( (END_TIME - START_TIME) * 1000 ))
 echo ""
 echo "=== Agent finished (exit code: ${CLAUDE_EXIT_CODE}, duration: ${DURATION_MS}ms) ==="
 
-# Report trace completion
-ingest "{\"events\":[{\"type\":\"trace.completed\",\"timestamp\":$(date +%s)000,\"agentId\":\"${AGENT_ID}\",\"payload\":{\"resourceType\":\"trace\",\"resourceId\":\"${TRACE_ID}\",\"traceId\":\"${TRACE_ID}\",\"durationMs\":${DURATION_MS},\"output\":\"Agent exited with code ${CLAUDE_EXIT_CODE}\"}}]}" > /dev/null
+# ---------------------------------------------------------------------------
+# 10. Parse session JSONL for accurate token/cost data and report trace completion
+# ---------------------------------------------------------------------------
+echo "[10/10] Parsing session data..."
+TRANSCRIPT_MARKER="${WORKTREE_PATH}/.swarmops-transcript"
+JSONL_PATH=""
+
+if [[ -f "$TRANSCRIPT_MARKER" ]]; then
+  JSONL_PATH=$(cat "$TRANSCRIPT_MARKER")
+fi
+
+if [[ -n "$JSONL_PATH" && -f "$JSONL_PATH" ]]; then
+  echo "  Found session JSONL: ${JSONL_PATH}"
+  # parse-session.ts reads the JSONL and POSTs trace.completed with real token/cost data
+  SWARMOPS_URL="$SWARMOPS_URL" \
+  SWARMOPS_TOKEN="$SWARMOPS_TOKEN" \
+  SWARMOPS_TRACE_ID="$TRACE_ID" \
+  SWARMOPS_AGENT_ID="$AGENT_ID" \
+    npx tsx "$PARSE_SESSION" "$JSONL_PATH" "$DURATION_MS" 2>/dev/null || {
+      echo "  Warning: parse-session.ts failed, falling back to basic trace completion"
+      ingest "{\"events\":[{\"type\":\"trace.completed\",\"timestamp\":$(date +%s)000,\"agentId\":\"${AGENT_ID}\",\"payload\":{\"resourceType\":\"trace\",\"resourceId\":\"${TRACE_ID}\",\"traceId\":\"${TRACE_ID}\",\"durationMs\":${DURATION_MS},\"output\":\"Agent exited with code ${CLAUDE_EXIT_CODE}\"}}]}" > /dev/null
+    }
+else
+  echo "  No session JSONL found, using basic trace completion"
+  ingest "{\"events\":[{\"type\":\"trace.completed\",\"timestamp\":$(date +%s)000,\"agentId\":\"${AGENT_ID}\",\"payload\":{\"resourceType\":\"trace\",\"resourceId\":\"${TRACE_ID}\",\"traceId\":\"${TRACE_ID}\",\"durationMs\":${DURATION_MS},\"output\":\"Agent exited with code ${CLAUDE_EXIT_CODE}\"}}]}" > /dev/null
+fi
 
 # Report agent completion or failure
 if [[ $CLAUDE_EXIT_CODE -eq 0 ]]; then

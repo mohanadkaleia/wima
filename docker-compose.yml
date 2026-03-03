@@ -1,0 +1,15 @@
+services:
+  swarmops:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - swarmops-data:/app/data
+    environment:
+      - DATABASE_URL=file:/app/data/swarmops.db
+      - API_SECRET=${API_SECRET:-change-me}
+      - PORT=3000
+    restart: unless-stopped
+
+volumes:
+  swarmops-data:
