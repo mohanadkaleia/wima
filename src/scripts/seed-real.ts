@@ -326,7 +326,7 @@ async function main() {
   ]);
   console.log("8 activity events created");
 
-  console.log("\nDone! Refresh SwarmOps to see everything.");
+  console.log("\nDone! Refresh Wima to see everything.");
 }
 
 main().catch(console.error);

@@ -32,7 +32,7 @@ export function Sidebar() {
       <div className="flex items-center gap-2 px-5 py-5">
         <Zap className="h-6 w-6 text-indigo-500" />
         <span className="text-lg font-semibold tracking-tight text-zinc-100">
-          SwarmOps
+          Wima
         </span>
       </div>
 
@@ -60,7 +60,7 @@ export function Sidebar() {
       </nav>
 
       <div className="border-t border-zinc-800 px-5 py-4">
-        <p className="text-xs text-zinc-600">SwarmOps v0.1.0</p>
+        <p className="text-xs text-zinc-600">Wima v0.1.0</p>
       </div>
     </aside>
   );

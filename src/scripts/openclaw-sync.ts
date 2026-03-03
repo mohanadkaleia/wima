@@ -6,8 +6,8 @@
  *
  * Environment variables:
  *   OPENCLAW_TASKS_PATH  — path to tasks.json (default: ~/.openclaw/workspace/memory/tasks.json)
- *   SWARMOPS_URL         — SwarmOps base URL (default: http://localhost:3000)
- *   SWARMOPS_API_TOKEN   — integration API token (required)
+ *   WIMA_URL         — Wima base URL (default: http://localhost:3000)
+ *   WIMA_API_TOKEN   — integration API token (required)
  *   POLL_INTERVAL_MS     — polling interval in ms (default: 10000)
  */
 
@@ -19,19 +19,19 @@ const tasksPath =
   process.env.OPENCLAW_TASKS_PATH ||
   resolve(homedir(), ".openclaw/workspace/memory/tasks.json");
 
-const baseUrl = process.env.SWARMOPS_URL || "http://localhost:3000";
-const apiToken = process.env.SWARMOPS_API_TOKEN;
+const baseUrl = process.env.WIMA_URL || "http://localhost:3000";
+const apiToken = process.env.WIMA_API_TOKEN;
 const pollInterval = Number(process.env.POLL_INTERVAL_MS) || 10_000;
 
 if (!apiToken) {
   console.error(
-    "Error: SWARMOPS_API_TOKEN is required.\n\n" +
+    "Error: WIMA_API_TOKEN is required.\n\n" +
       "Usage:\n" +
-      "  SWARMOPS_API_TOKEN=<token> npx tsx src/scripts/openclaw-sync.ts\n\n" +
+      "  WIMA_API_TOKEN=<token> npx tsx src/scripts/openclaw-sync.ts\n\n" +
       "Environment variables:\n" +
       "  OPENCLAW_TASKS_PATH  — path to tasks.json\n" +
-      "  SWARMOPS_URL         — SwarmOps base URL (default: http://localhost:3000)\n" +
-      "  SWARMOPS_API_TOKEN   — integration API token (required)\n" +
+      "  WIMA_URL         — Wima base URL (default: http://localhost:3000)\n" +
+      "  WIMA_API_TOKEN   — integration API token (required)\n" +
       "  POLL_INTERVAL_MS     — polling interval in ms (default: 10000)"
   );
   process.exit(1);

@@ -22,7 +22,7 @@ import {
 } from "../server/db/schema";
 
 const client = createClient({
-  url: process.env.DATABASE_URL || "file:./swarmops.db",
+  url: process.env.DATABASE_URL || "file:./wima.db",
 });
 
 const db = drizzle(client);
@@ -91,7 +91,7 @@ async function seed() {
       labels: JSON.stringify(["infra", "ci"]),
       branchName: "feat/ci-pipeline",
       worktreePath: null,
-      prUrl: "https://github.com/example/swarmops/pull/1",
+      prUrl: "https://github.com/example/wima/pull/1",
       integrationId,
       createdAt: now - 5 * day,
       startedAt: now - 5 * day,

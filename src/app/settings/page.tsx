@@ -134,16 +134,16 @@ function IntegrationCard({
             {showSetup && (
               <div className="mt-3 rounded-lg border border-zinc-800 bg-zinc-900 p-4 space-y-3">
                 <p className="text-sm text-zinc-400">
-                  Run the sync script to start streaming OpenClaw events into SwarmOps:
+                  Run the sync script to start streaming OpenClaw events into Wima:
                 </p>
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-zinc-500">1. Copy the command:</p>
                   <div className="flex items-center gap-2">
                     <code className="flex-1 rounded-md bg-zinc-800 px-3 py-2 font-mono text-xs text-emerald-400 border border-zinc-700 overflow-x-auto">
-                      SWARMOPS_API_TOKEN={integration.apiToken} npx tsx src/scripts/openclaw-sync.ts
+                      WIMA_API_TOKEN={integration.apiToken} npx tsx src/scripts/openclaw-sync.ts
                     </code>
                     <CopyButton
-                      text={`SWARMOPS_API_TOKEN=${integration.apiToken} npx tsx src/scripts/openclaw-sync.ts`}
+                      text={`WIMA_API_TOKEN=${integration.apiToken} npx tsx src/scripts/openclaw-sync.ts`}
                     />
                   </div>
                 </div>
@@ -155,7 +155,7 @@ function IntegrationCard({
                       (default: ~/.openclaw/workspace/memory/tasks.json)
                     </li>
                     <li>
-                      <code className="text-zinc-300">SWARMOPS_URL</code> — SwarmOps URL (default:
+                      <code className="text-zinc-300">WIMA_URL</code> — Wima URL (default:
                       http://localhost:3000)
                     </li>
                     <li>
@@ -243,7 +243,7 @@ function AddIntegrationForm({ onSuccess }: { onSuccess: () => void }) {
       <CardHeader>
         <CardTitle className="text-zinc-100">New Integration</CardTitle>
         <CardDescription className="text-zinc-500">
-          Connect an external system to SwarmOps.
+          Connect an external system to Wima.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -349,7 +349,7 @@ export default function SettingsPage() {
           <div>
             <h2 className="text-lg font-medium text-zinc-200">Integrations</h2>
             <p className="text-sm text-zinc-500">
-              Manage external connections that feed events into SwarmOps.
+              Manage external connections that feed events into Wima.
             </p>
           </div>
           <AddIntegrationForm

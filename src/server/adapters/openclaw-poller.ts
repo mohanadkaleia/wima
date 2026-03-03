@@ -2,7 +2,7 @@
  * OpenClaw Polling Worker
  *
  * Periodically polls OpenClaw's tasks.json file and posts
- * delta events to the SwarmOps ingest API.
+ * delta events to the Wima ingest API.
  */
 
 import { readFile } from "node:fs/promises";
@@ -13,7 +13,7 @@ export interface OpenClawPollerConfig {
   tasksJsonPath: string;
   /** Polling interval in ms (default 10000) */
   pollIntervalMs?: number;
-  /** SwarmOps ingest URL, e.g. http://localhost:3000/api/v1/ingest */
+  /** Wima ingest URL, e.g. http://localhost:3000/api/v1/ingest */
   ingestUrl: string;
   /** Integration API token */
   apiToken: string;

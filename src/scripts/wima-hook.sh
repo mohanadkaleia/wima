@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# swarmops-hook.sh — Claude Code PostToolUse/Stop hook for automatic activity capture.
+# wima-hook.sh — Claude Code PostToolUse/Stop hook for automatic activity capture.
 #
 # Receives JSON on stdin from Claude Code hooks system.
-# Posts trace.observation events to SwarmOps ingest API.
+# Posts trace.observation events to Wima ingest API.
 # Fire-and-forget: ignores errors, never blocks the agent.
 #
 # Required env vars (set by spawn-agent.sh):
-#   SWARMOPS_URL, SWARMOPS_TOKEN, SWARMOPS_TRACE_ID
+#   WIMA_URL, WIMA_TOKEN, WIMA_TRACE_ID
 # Optional:
-#   SWARMOPS_AGENT_ID
+#   WIMA_AGENT_ID
 
 set -o pipefail
 
-# Exit silently if not in a SwarmOps-managed session
-if [[ -z "${SWARMOPS_URL:-}" || -z "${SWARMOPS_TOKEN:-}" || -z "${SWARMOPS_TRACE_ID:-}" ]]; then
+# Exit silently if not in a Wima-managed session
+if [[ -z "${WIMA_URL:-}" || -z "${WIMA_TOKEN:-}" || -z "${WIMA_TRACE_ID:-}" ]]; then
   exit 0
 fi
 
@@ -36,7 +36,7 @@ TOOL_INPUT=$(echo "$INPUT" | jq -c '.tool_input // {}' 2>/dev/null | head -c 204
 TOOL_RESPONSE=$(echo "$INPUT" | jq -c '.tool_response // {}' 2>/dev/null | head -c 2048)
 
 # Write transcript_path to worktree marker on first invocation
-WORKTREE_MARKER="${SWARMOPS_WORKTREE_PATH:-.}/.swarmops-transcript"
+WORKTREE_MARKER="${WIMA_WORKTREE_PATH:-.}/.wima-transcript"
 if [[ -n "$TRANSCRIPT_PATH" && ! -f "$WORKTREE_MARKER" ]]; then
   echo "$TRANSCRIPT_PATH" > "$WORKTREE_MARKER" 2>/dev/null || true
 fi
@@ -62,11 +62,11 @@ PAYLOAD=$(cat <<EOF
   "events": [{
     "type": "trace.observation",
     "timestamp": ${TIMESTAMP},
-    "agentId": "${SWARMOPS_AGENT_ID:-unknown}",
+    "agentId": "${WIMA_AGENT_ID:-unknown}",
     "payload": {
       "resourceType": "observation",
       "resourceId": "${TOOL_USE_ID:-obs-$$}",
-      "traceId": "${SWARMOPS_TRACE_ID}",
+      "traceId": "${WIMA_TRACE_ID}",
       "type": "tool_call",
       "name": "${OBS_NAME}",
       "toolName": "${TOOL_NAME}",
@@ -79,9 +79,9 @@ EOF
 )
 
 # Fire-and-forget POST
-curl -s -X POST "${SWARMOPS_URL}/api/v1/ingest" \
+curl -s -X POST "${WIMA_URL}/api/v1/ingest" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer ${SWARMOPS_TOKEN}" \
+  -H "Authorization: Bearer ${WIMA_TOKEN}" \
   -d "$PAYLOAD" \
   >/dev/null 2>&1 &
 

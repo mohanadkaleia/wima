@@ -1,15 +1,15 @@
 services:
-  swarmops:
+  wima:
     build: .
     ports:
       - "3000:3000"
     volumes:
-      - swarmops-data:/app/data
+      - wima-data:/app/data
     environment:
-      - DATABASE_URL=file:/app/data/swarmops.db
+      - DATABASE_URL=file:/app/data/wima.db
       - API_SECRET=${API_SECRET:-change-me}
       - PORT=3000
     restart: unless-stopped
 
 volumes:
-  swarmops-data:
+  wima-data:

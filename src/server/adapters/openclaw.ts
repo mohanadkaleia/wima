@@ -1,7 +1,7 @@
 /**
  * OpenClaw Adapter
  *
- * Translates OpenClaw data formats into SwarmOps ingest events.
+ * Translates OpenClaw data formats into Wima ingest events.
  */
 
 export interface OpenClawTask {

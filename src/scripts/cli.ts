@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * SwarmOps CLI — lightweight agent integration tool.
+ * Wima CLI — lightweight agent integration tool.
  *
  * Usage:
  *   npx tsx <path>/cli.ts <command> [args]
@@ -12,20 +12,20 @@
  *   done <summary>          Report completion with summary
  *
  * Environment variables:
- *   SWARMOPS_URL         Base URL (default http://localhost:3002)
- *   SWARMOPS_TOKEN       API token
- *   SWARMOPS_TASK_ID     Task ID in SwarmOps
- *   SWARMOPS_AGENT_ID    Agent ID
- *   SWARMOPS_TRACE_ID    Trace ID for this work session
- *   SWARMOPS_CHANNEL_ID  Task channel ID
+ *   WIMA_URL         Base URL (default http://localhost:3002)
+ *   WIMA_TOKEN       API token
+ *   WIMA_TASK_ID     Task ID in Wima
+ *   WIMA_AGENT_ID    Agent ID
+ *   WIMA_TRACE_ID    Trace ID for this work session
+ *   WIMA_CHANNEL_ID  Task channel ID
  */
 
-const BASE_URL = process.env.SWARMOPS_URL || "http://localhost:3002";
-const TOKEN = process.env.SWARMOPS_TOKEN || "";
-const TASK_ID = process.env.SWARMOPS_TASK_ID || "";
-const AGENT_ID = process.env.SWARMOPS_AGENT_ID || "";
-const TRACE_ID = process.env.SWARMOPS_TRACE_ID || "";
-const CHANNEL_ID = process.env.SWARMOPS_CHANNEL_ID || "";
+const BASE_URL = process.env.WIMA_URL || "http://localhost:3002";
+const TOKEN = process.env.WIMA_TOKEN || "";
+const TASK_ID = process.env.WIMA_TASK_ID || "";
+const AGENT_ID = process.env.WIMA_AGENT_ID || "";
+const TRACE_ID = process.env.WIMA_TRACE_ID || "";
+const CHANNEL_ID = process.env.WIMA_CHANNEL_ID || "";
 
 interface IngestEvent {
   type: string;
@@ -48,16 +48,16 @@ async function postEvents(events: IngestEvent[]): Promise<void> {
 
     if (!res.ok) {
       const body = await res.text();
-      console.error(`SwarmOps ingest failed (${res.status}): ${body}`);
+      console.error(`Wima ingest failed (${res.status}): ${body}`);
       process.exit(1);
     }
 
     const data = await res.json();
-    console.log(`SwarmOps: ${data.received} event(s) ingested`);
+    console.log(`Wima: ${data.received} event(s) ingested`);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`SwarmOps: Failed to reach ${url} — ${message}`);
-    // Don't exit with error — agent should keep working even if SwarmOps is down
+    console.error(`Wima: Failed to reach ${url} — ${message}`);
+    // Don't exit with error — agent should keep working even if Wima is down
   }
 }
 
@@ -82,7 +82,7 @@ function parseNamedArgs(args: string[]): Record<string, string> {
 async function cmdMsg(args: string[]) {
   const message = args.join(" ");
   if (!message) {
-    console.error("Usage: swarmops msg <message>");
+    console.error("Usage: wima msg <message>");
     process.exit(1);
   }
 
@@ -106,7 +106,7 @@ async function cmdMsg(args: string[]) {
 async function cmdStatus(args: string[]) {
   const status = args[0];
   if (!status) {
-    console.error("Usage: swarmops status <in_progress|done|blocked|in_review>");
+    console.error("Usage: wima status <in_progress|done|blocked|in_review>");
     process.exit(1);
   }
 
@@ -138,7 +138,7 @@ async function cmdDecision(args: string[]) {
 
   if (!named.title || !named.context || !named.decision) {
     console.error(
-      'Usage: swarmops decision --title "..." --context "..." --decision "..." [--alternatives "..."] [--consequences "..."]'
+      'Usage: wima decision --title "..." --context "..." --decision "..." [--alternatives "..."] [--consequences "..."]'
     );
     process.exit(1);
   }
@@ -167,7 +167,7 @@ async function cmdDecision(args: string[]) {
 async function cmdDone(args: string[]) {
   const summary = args.join(" ");
   if (!summary) {
-    console.error("Usage: swarmops done <summary>");
+    console.error("Usage: wima done <summary>");
     process.exit(1);
   }
 
@@ -222,7 +222,7 @@ async function main() {
   const [, , command, ...rest] = process.argv;
 
   if (!command) {
-    console.error("Usage: swarmops <msg|status|decision|done> [args]");
+    console.error("Usage: wima <msg|status|decision|done> [args]");
     process.exit(1);
   }
 
@@ -247,6 +247,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error("SwarmOps CLI error:", err);
+  console.error("Wima CLI error:", err);
   process.exit(1);
 });

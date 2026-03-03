@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# spawn-agent.sh — Spawn a Claude Code agent with full SwarmOps tracking.
+# spawn-agent.sh — Spawn a Claude Code agent with full Wima tracking.
 #
 # Usage:
-#   bash ~/workspace/swarmops/src/scripts/spawn-agent.sh \
+#   bash ~/workspace/wima/src/scripts/spawn-agent.sh \
 #     --task-slug "fix-auth-bug" \
 #     --task-description "Fix the authentication timeout bug" \
 #     --repo "/Users/mohanadkaleia/workspace/myproject" \
@@ -15,18 +15,18 @@ set -euo pipefail
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
-SWARMOPS_URL="${SWARMOPS_URL:-http://localhost:3002}"
-SWARMOPS_TOKEN="${SWARMOPS_TOKEN:-}"
+WIMA_URL="${WIMA_URL:-http://localhost:3002}"
+WIMA_TOKEN="${WIMA_TOKEN:-}"
 TASK_SLUG=""
 TASK_DESCRIPTION=""
 REPO=""
 BRANCH=""
 WORKTREE_BASE="${HOME}/openclaw-worktrees"
-SWARMOPS_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-CLI_PATH="${SWARMOPS_DIR}/src/scripts/cli.ts"
-HOOK_SCRIPT="${SWARMOPS_DIR}/src/scripts/swarmops-hook.sh"
-PARSE_SESSION="${SWARMOPS_DIR}/src/scripts/parse-session.ts"
-TEMPLATE_PATH="${SWARMOPS_DIR}/src/templates/CLAUDE.md"
+WIMA_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+CLI_PATH="${WIMA_DIR}/src/scripts/cli.ts"
+HOOK_SCRIPT="${WIMA_DIR}/src/scripts/wima-hook.sh"
+PARSE_SESSION="${WIMA_DIR}/src/scripts/parse-session.ts"
+TEMPLATE_PATH="${WIMA_DIR}/src/templates/CLAUDE.md"
 START_TIME=$(date +%s)
 
 # ---------------------------------------------------------------------------
@@ -38,8 +38,8 @@ while [[ $# -gt 0 ]]; do
     --task-description) TASK_DESCRIPTION="$2"; shift 2 ;;
     --repo)          REPO="$2"; shift 2 ;;
     --branch)        BRANCH="$2"; shift 2 ;;
-    --token)         SWARMOPS_TOKEN="$2"; shift 2 ;;
-    --url)           SWARMOPS_URL="$2"; shift 2 ;;
+    --token)         WIMA_TOKEN="$2"; shift 2 ;;
+    --url)           WIMA_URL="$2"; shift 2 ;;
     *) echo "Unknown argument: $1"; exit 1 ;;
   esac
 done
@@ -64,14 +64,14 @@ if [[ -z "$BRANCH" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Helper: POST to ingest API (fire-and-forget if SwarmOps is down)
+# Helper: POST to ingest API (fire-and-forget if Wima is down)
 # ---------------------------------------------------------------------------
 ingest() {
   local payload="$1"
-  curl -s -X POST "${SWARMOPS_URL}/api/v1/ingest" \
+  curl -s -X POST "${WIMA_URL}/api/v1/ingest" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer ${SWARMOPS_TOKEN}" \
-    -d "$payload" 2>/dev/null || echo '{"error":"SwarmOps unreachable"}'
+    -H "Authorization: Bearer ${WIMA_TOKEN}" \
+    -d "$payload" 2>/dev/null || echo '{"error":"Wima unreachable"}'
 }
 
 # ---------------------------------------------------------------------------
@@ -79,8 +79,8 @@ ingest() {
 # ---------------------------------------------------------------------------
 resolve() {
   local query="$1"
-  curl -s "${SWARMOPS_URL}/api/v1/resolve?${query}" \
-    -H "Authorization: Bearer ${SWARMOPS_TOKEN}" 2>/dev/null || echo '{"id":null,"exists":false}'
+  curl -s "${WIMA_URL}/api/v1/resolve?${query}" \
+    -H "Authorization: Bearer ${WIMA_TOKEN}" 2>/dev/null || echo '{"id":null,"exists":false}'
 }
 
 # ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ TRACE_ID="trace-$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom 2>/dev/null | head 
 AGENT_NAME="claude-worker-$$"
 WORKTREE_PATH="${WORKTREE_BASE}/${TASK_SLUG}"
 
-echo "=== SwarmOps Agent Spawn ==="
+echo "=== Wima Agent Spawn ==="
 echo "  Task:      ${TASK_SLUG}"
 echo "  Branch:    ${BRANCH}"
 echo "  Repo:      ${REPO}"
@@ -101,7 +101,7 @@ echo "  Worktree:  ${WORKTREE_PATH}"
 echo ""
 
 # ---------------------------------------------------------------------------
-# 1. Create/find the task in SwarmOps
+# 1. Create/find the task in Wima
 # ---------------------------------------------------------------------------
 echo "[1/10] Creating/finding task..."
 RESOLVE_RESULT=$(resolve "type=task&slug=${TASK_SLUG}")
@@ -250,7 +250,7 @@ echo ""
 
 CLAUDE_PROMPT="${TASK_DESCRIPTION}.
 
-Your activity is automatically tracked by SwarmOps (tool calls, token usage, cost).
+Your activity is automatically tracked by Wima (tool calls, token usage, cost).
 Optionally use the CLI for explicit status messages or decisions:
 - Run: npx tsx ${CLI_PATH} msg \"your message\" to post updates
 - Run: npx tsx ${CLI_PATH} decision --title \"...\" --context \"...\" --decision \"...\" to log decisions
@@ -259,13 +259,13 @@ When completely finished, run: openclaw system event --text \"Done: ${TASK_SLUG}
 
 cd "$WORKTREE_PATH"
 
-SWARMOPS_URL="$SWARMOPS_URL" \
-SWARMOPS_TOKEN="$SWARMOPS_TOKEN" \
-SWARMOPS_TASK_ID="$TASK_ID" \
-SWARMOPS_AGENT_ID="$AGENT_ID" \
-SWARMOPS_TRACE_ID="$TRACE_ID" \
-SWARMOPS_CHANNEL_ID="$CHANNEL_ID" \
-SWARMOPS_WORKTREE_PATH="$WORKTREE_PATH" \
+WIMA_URL="$WIMA_URL" \
+WIMA_TOKEN="$WIMA_TOKEN" \
+WIMA_TASK_ID="$TASK_ID" \
+WIMA_AGENT_ID="$AGENT_ID" \
+WIMA_TRACE_ID="$TRACE_ID" \
+WIMA_CHANNEL_ID="$CHANNEL_ID" \
+WIMA_WORKTREE_PATH="$WORKTREE_PATH" \
   claude --dangerously-skip-permissions "$CLAUDE_PROMPT"
 
 CLAUDE_EXIT_CODE=$?
@@ -283,7 +283,7 @@ echo "=== Agent finished (exit code: ${CLAUDE_EXIT_CODE}, duration: ${DURATION_M
 # 10. Parse session JSONL for accurate token/cost data and report trace completion
 # ---------------------------------------------------------------------------
 echo "[10/10] Parsing session data..."
-TRANSCRIPT_MARKER="${WORKTREE_PATH}/.swarmops-transcript"
+TRANSCRIPT_MARKER="${WORKTREE_PATH}/.wima-transcript"
 JSONL_PATH=""
 
 if [[ -f "$TRANSCRIPT_MARKER" ]]; then
@@ -293,10 +293,10 @@ fi
 if [[ -n "$JSONL_PATH" && -f "$JSONL_PATH" ]]; then
   echo "  Found session JSONL: ${JSONL_PATH}"
   # parse-session.ts reads the JSONL and POSTs trace.completed with real token/cost data
-  SWARMOPS_URL="$SWARMOPS_URL" \
-  SWARMOPS_TOKEN="$SWARMOPS_TOKEN" \
-  SWARMOPS_TRACE_ID="$TRACE_ID" \
-  SWARMOPS_AGENT_ID="$AGENT_ID" \
+  WIMA_URL="$WIMA_URL" \
+  WIMA_TOKEN="$WIMA_TOKEN" \
+  WIMA_TRACE_ID="$TRACE_ID" \
+  WIMA_AGENT_ID="$AGENT_ID" \
     npx tsx "$PARSE_SESSION" "$JSONL_PATH" "$DURATION_MS" 2>/dev/null || {
       echo "  Warning: parse-session.ts failed, falling back to basic trace completion"
       ingest "{\"events\":[{\"type\":\"trace.completed\",\"timestamp\":$(date +%s)000,\"agentId\":\"${AGENT_ID}\",\"payload\":{\"resourceType\":\"trace\",\"resourceId\":\"${TRACE_ID}\",\"traceId\":\"${TRACE_ID}\",\"durationMs\":${DURATION_MS},\"output\":\"Agent exited with code ${CLAUDE_EXIT_CODE}\"}}]}" > /dev/null

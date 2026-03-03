@@ -3,26 +3,26 @@
  * parse-session.ts — Post-hoc Claude Code session JSONL parser.
  *
  * Reads a Claude Code session JSONL file, aggregates token usage and cost,
- * then POSTs a trace.completed event to SwarmOps with real totals.
+ * then POSTs a trace.completed event to Wima with real totals.
  *
  * Usage:
  *   npx tsx parse-session.ts <jsonl-path>
  *
  * Environment variables:
- *   SWARMOPS_URL         Base URL (default http://localhost:3002)
- *   SWARMOPS_TOKEN       API token
- *   SWARMOPS_TRACE_ID    Trace ID to complete
- *   SWARMOPS_AGENT_ID    Agent ID
+ *   WIMA_URL         Base URL (default http://localhost:3002)
+ *   WIMA_TOKEN       API token
+ *   WIMA_TRACE_ID    Trace ID to complete
+ *   WIMA_AGENT_ID    Agent ID
  *
  * Output (stdout): JSON with aggregated stats for use by spawn-agent.sh
  */
 
 import { readFileSync } from "fs";
 
-const BASE_URL = process.env.SWARMOPS_URL || "http://localhost:3002";
-const TOKEN = process.env.SWARMOPS_TOKEN || "";
-const TRACE_ID = process.env.SWARMOPS_TRACE_ID || "";
-const AGENT_ID = process.env.SWARMOPS_AGENT_ID || "";
+const BASE_URL = process.env.WIMA_URL || "http://localhost:3002";
+const TOKEN = process.env.WIMA_TOKEN || "";
+const TRACE_ID = process.env.WIMA_TRACE_ID || "";
+const AGENT_ID = process.env.WIMA_AGENT_ID || "";
 
 // Per-model pricing (USD per million tokens)
 const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead: number; cacheWrite: number }> = {
@@ -131,7 +131,7 @@ function parseSessionFile(filePath: string): SessionStats {
 
 async function postTraceCompleted(stats: SessionStats, durationMs?: number): Promise<void> {
   if (!TRACE_ID || !TOKEN) {
-    console.error("parse-session: Missing SWARMOPS_TRACE_ID or SWARMOPS_TOKEN, skipping POST");
+    console.error("parse-session: Missing WIMA_TRACE_ID or WIMA_TOKEN, skipping POST");
     return;
   }
 
@@ -173,7 +173,7 @@ async function postTraceCompleted(stats: SessionStats, durationMs?: number): Pro
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(`parse-session: Failed to reach SwarmOps — ${message}`);
+    console.error(`parse-session: Failed to reach Wima — ${message}`);
   }
 }
 
@@ -194,7 +194,7 @@ async function main() {
     // Print stats to stdout for spawn-agent.sh to capture
     console.log(JSON.stringify(stats));
 
-    // POST trace.completed to SwarmOps
+    // POST trace.completed to Wima
     await postTraceCompleted(stats, durationMs);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SwarmOps",
-  description: "AI Agent Team OS",
+  title: "Wima",
+  description: "Where Is My Agent",
 };
 
 export default function RootLayout({

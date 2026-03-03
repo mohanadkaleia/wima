@@ -5,6 +5,6 @@ export default defineConfig({
   out: "./drizzle",
   dialect: "sqlite",
   dbCredentials: {
-    url: process.env.DATABASE_URL || "file:./swarmops.db",
+    url: process.env.DATABASE_URL || "file:./wima.db",
   },
 });

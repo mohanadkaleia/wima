@@ -3,7 +3,7 @@ import { createClient } from "@libsql/client";
 import * as schema from "./schema";
 
 const client = createClient({
-  url: process.env.DATABASE_URL || "file:./swarmops.db",
+  url: process.env.DATABASE_URL || "file:./wima.db",
 });
 
 export const db = drizzle(client, { schema });
