@@ -25,11 +25,12 @@ const TRACE_ID = process.env.WIMA_TRACE_ID || "";
 const AGENT_ID = process.env.WIMA_AGENT_ID || "";
 
 // Per-model pricing (USD per million tokens)
+// Pricing: USD per million tokens (cache read = 0.1x input, cache write = 1.25x input)
 const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead: number; cacheWrite: number }> = {
-  "claude-sonnet-4-6":     { input: 3,  output: 15, cacheRead: 0.30, cacheWrite: 3.75 },
-  "claude-sonnet-4-5-20250514": { input: 3, output: 15, cacheRead: 0.30, cacheWrite: 3.75 },
-  "claude-opus-4-6":       { input: 15, output: 75, cacheRead: 1.50, cacheWrite: 18.75 },
-  "claude-haiku-4-5-20251001": { input: 0.80, output: 4, cacheRead: 0.08, cacheWrite: 1 },
+  "claude-sonnet-4-6":          { input: 3,  output: 15, cacheRead: 0.30, cacheWrite: 3.75 },
+  "claude-sonnet-4-5-20250514": { input: 3,  output: 15, cacheRead: 0.30, cacheWrite: 3.75 },
+  "claude-opus-4-6":            { input: 5,  output: 25, cacheRead: 0.50, cacheWrite: 6.25 },
+  "claude-haiku-4-5-20251001":  { input: 1,  output: 5,  cacheRead: 0.10, cacheWrite: 1.25 },
 };
 
 const DEFAULT_PRICING = { input: 3, output: 15, cacheRead: 0.30, cacheWrite: 3.75 };
